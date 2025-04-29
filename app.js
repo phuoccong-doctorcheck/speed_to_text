@@ -2,32 +2,35 @@ const micButton = document.getElementById('mic');
 const resultDiv = document.getElementById('result');
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
 
-// Cấu hình Recognition
-recognition.lang = 'en-US'; // Nếu muốn tiếng Việt: 'vi-VN'
-recognition.interimResults = false; // chỉ lấy kết quả cuối cùng
-recognition.maxAlternatives = 1; // chỉ lấy 1 kết quả tốt nhất
+if (!SpeechRecognition) {
+  resultDiv.textContent = "Speech Recognition not supported in this browser.";
+} else {
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'vi-VN'; // Hoặc 'en-US' nếu bạn muốn tiếng Anh
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
 
-micButton.addEventListener('click', () => {
-    console.log('Starting recognition...');
+  micButton.addEventListener('click', async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true }); 
+      recognition.start();
+      resultDiv.textContent = "Listening...";
+    } catch (error) {
+      resultDiv.textContent = `Microphone permission denied: ${error.message}`;
+    }
+  });
 
-  recognition.start();
-  resultDiv.textContent = "Listening...";
-});
+  recognition.addEventListener('result', (event) => {
+    const transcript = event.results[0][0].transcript;
+    resultDiv.textContent = `You said: ${transcript}`;
+  });
 
-// Khi nhận được kết quả
-recognition.addEventListener('result', (event) => {
-  const transcript = event.results[0][0].transcript;
-  resultDiv.textContent = `You said: ${transcript}`;
-});
+  recognition.addEventListener('error', (event) => {
+    resultDiv.textContent = `Error occurred: ${event.error}`;
+  });
 
-// Nếu có lỗi
-recognition.addEventListener('error', (event) => {
-  resultDiv.textContent = `Error occurred: ${event.error}`;
-});
-
-// Khi kết thúc tự động
-recognition.addEventListener('end', () => {
-  console.log('Microphone stopped.');
-});
+  recognition.addEventListener('end', () => {
+    console.log('Microphone listening stopped.');
+  });
+}
